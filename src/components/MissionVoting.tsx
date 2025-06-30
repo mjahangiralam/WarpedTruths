@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CheckCircle, XCircle, Clock, Shield, AlertTriangle } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, Shield, AlertTriangle, SkipForward } from 'lucide-react';
 import { Player, Mission } from '../types/game';
 
 interface MissionVotingProps {
@@ -19,6 +19,7 @@ export function MissionVoting({
 }: MissionVotingProps) {
   const [playerVote, setPlayerVote] = useState<'success' | 'fail' | null>(null);
   const [showCards, setShowCards] = useState(false);
+  const [voteSubmitted, setVoteSubmitted] = useState(false);
 
   React.useEffect(() => {
     const timer = setTimeout(() => setShowCards(true), 500);
@@ -27,10 +28,21 @@ export function MissionVoting({
 
   const handleVote = (vote: 'success' | 'fail') => {
     setPlayerVote(vote);
+    setVoteSubmitted(true);
     // Simulate thinking time
     setTimeout(() => {
       onVote(vote);
     }, 1500);
+  };
+
+  const handleSkip = () => {
+    if (!voteSubmitted) {
+      // If no vote submitted, submit a default vote
+      handleVote('success');
+    } else {
+      // If vote already submitted, just proceed
+      onVote(playerVote || 'success');
+    }
   };
 
   const isOnTeam = selectedTeam.includes(humanPlayer.id);
@@ -44,6 +56,15 @@ export function MissionVoting({
           <Clock className="w-16 h-16 text-cyan-400 mx-auto mb-4 animate-spin" />
           <h2 className="text-2xl font-bold text-white mb-2">Preparing Mission Cards</h2>
           <p className="text-slate-400">Establishing secure connection...</p>
+          <button
+            onClick={() => setShowCards(true)}
+            className="mt-4 group flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-600 text-white font-bold rounded-lg 
+                     transform transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/25
+                     active:scale-95 border border-purple-400/30"
+          >
+            <SkipForward className="w-5 h-5 group-hover:animate-pulse" />
+            SKIP
+          </button>
         </div>
       </div>
     );
@@ -68,6 +89,15 @@ export function MissionVoting({
             <div className="w-2 h-2 bg-purple-400 rounded-full animate-ping delay-75"></div>
             <div className="w-2 h-2 bg-pink-400 rounded-full animate-ping delay-150"></div>
           </div>
+          <button
+            onClick={handleSkip}
+            className="mt-6 group flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-600 text-white font-bold rounded-lg 
+                     transform transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/25
+                     active:scale-95 border border-purple-400/30"
+          >
+            <SkipForward className="w-5 h-5 group-hover:animate-pulse" />
+            SKIP WAITING
+          </button>
         </div>
       </div>
     );
@@ -85,9 +115,21 @@ export function MissionVoting({
         <div className="max-w-4xl mx-auto">
           {/* Header */}
           <div className="text-center mb-8">
-            <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent mb-4">
-              MISSION EXECUTION
-            </h1>
+            <div className="flex items-center justify-between mb-4">
+              <div></div> {/* Spacer */}
+              <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
+                MISSION EXECUTION
+              </h1>
+              <button
+                onClick={handleSkip}
+                className="group flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-600 text-white font-bold rounded-lg 
+                         transform transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/25
+                         active:scale-95 border border-purple-400/30"
+              >
+                <SkipForward className="w-5 h-5 group-hover:animate-pulse" />
+                SKIP
+              </button>
+            </div>
             <p className="text-slate-300 text-lg">
               {isOnTeam ? 'You are on the mission team. Submit your action card.' : 'Waiting for mission team to complete their actions.'}
             </p>
@@ -167,24 +209,40 @@ export function MissionVoting({
                   </div>
                 </div>
 
-                {/* Fail Card */}
-                <div className="perspective-1000">
-                  <div 
-                    onClick={() => handleVote('fail')}
-                    className={`relative w-full h-64 transform-style-preserve-3d transition-transform duration-300 hover:scale-105 hover:rotate-2 ${
-                      canSabotage ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
-                    }`}
-                  >
-                    <div className="w-full h-full bg-gradient-to-br from-red-500 to-crimson-600 rounded-2xl border-2 border-red-400 
-                                  shadow-2xl shadow-red-500/25 flex flex-col items-center justify-center p-6 text-white">
-                      <XCircle className="w-16 h-16 mb-4" />
-                      <h4 className="text-2xl font-bold mb-2">SABOTAGE</h4>
-                      <p className="text-sm text-center opacity-90">
-                        {canSabotage ? 'Sabotage the mission from within' : 'Only available to Chronari agents'}
-                      </p>
+                {/* Fail Card - Only show for saboteurs */}
+                {canSabotage && (
+                  <div className="perspective-1000">
+                    <div 
+                      onClick={() => handleVote('fail')}
+                      className="relative w-full h-64 cursor-pointer transform-style-preserve-3d transition-transform duration-300 hover:scale-105 hover:rotate-2"
+                    >
+                      <div className="w-full h-full bg-gradient-to-br from-red-500 to-crimson-600 rounded-2xl border-2 border-red-400 
+                                    shadow-2xl shadow-red-500/25 flex flex-col items-center justify-center p-6 text-white">
+                        <XCircle className="w-16 h-16 mb-4" />
+                        <h4 className="text-2xl font-bold mb-2">SABOTAGE</h4>
+                        <p className="text-sm text-center opacity-90">
+                          Sabotage the mission from within
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
+
+                {/* Placeholder for non-saboteurs */}
+                {!canSabotage && (
+                  <div className="perspective-1000">
+                    <div className="relative w-full h-64 transform-style-preserve-3d">
+                      <div className="w-full h-full bg-slate-700/50 rounded-2xl border-2 border-slate-600 
+                                    flex flex-col items-center justify-center p-6 text-slate-400">
+                        <Shield className="w-16 h-16 mb-4 opacity-50" />
+                        <h4 className="text-2xl font-bold mb-2">HUMAN AGENT</h4>
+                        <p className="text-sm text-center opacity-90">
+                          Only success cards available to Human Agents
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="mt-8 p-4 bg-slate-800/30 rounded-lg border border-slate-700 max-w-md mx-auto">

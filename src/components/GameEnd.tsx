@@ -12,7 +12,7 @@ interface GameEndProps {
 export function GameEnd({ players, missions, onRestart, onMainMenu }: GameEndProps) {
   const successfulMissions = missions.filter(m => m.status === 'success').length;
   const failedMissions = missions.filter(m => m.status === 'failed').length;
-  const humanWin = successfulMissions >= 3;
+  const humanWin = successfulMissions >= 2;
   const humanPlayer = players.find(p => p.isHuman);
   const aiPlayers = players.filter(p => !p.isHuman);
 
@@ -60,8 +60,8 @@ export function GameEnd({ players, missions, onRestart, onMainMenu }: GameEndPro
             
             <p className="text-slate-300 text-lg max-w-2xl mx-auto">
               {humanWin 
-                ? 'The cosmic relics have been secured! Humanity\'s future is safe from the Chronari threat.'
-                : 'The timeline has been corrupted. The Chronari have succeeded in their dark mission.'
+                ? `Humanity secured ${successfulMissions} out of 3 cosmic relics! The timeline is safe from Chronari corruption.`
+                : `The Chronari succeeded in corrupting the timeline. Only ${successfulMissions} out of 3 relics were secured.`
               }
             </p>
           </div>

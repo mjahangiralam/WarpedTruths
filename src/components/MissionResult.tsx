@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CheckCircle, XCircle, Clock, Users, Target, AlertCircle } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, Users, Target, AlertCircle, SkipForward } from 'lucide-react';
 import { Player, Mission, MissionVote } from '../types/game';
 
 interface MissionResultProps {
@@ -27,6 +27,11 @@ export function MissionResult({ players, selectedTeam, currentMission, onContinu
     }
   }, [revealed, cardIndex, currentMission.votes]);
 
+  const handleSkip = () => {
+    setRevealed(true);
+    setCardIndex(currentMission.votes?.length || 0);
+  };
+
   const votes = currentMission.votes || [];
   const failVotes = votes.filter(v => v.vote === 'fail').length;
   const successVotes = votes.filter(v => v.vote === 'success').length;
@@ -49,9 +54,25 @@ export function MissionResult({ players, selectedTeam, currentMission, onContinu
         <div className="max-w-4xl mx-auto">
           {/* Mission Header */}
           <div className="text-center mb-8">
-            <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent mb-4">
-              MISSION REPORT
-            </h1>
+            <div className="flex items-center justify-between mb-4">
+              <div></div> {/* Spacer */}
+              <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
+                MISSION REPORT
+              </h1>
+              <div>
+                {(!revealed || cardIndex < (currentMission.votes?.length || 0)) && (
+                  <button
+                    onClick={handleSkip}
+                    className="group flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-600 text-white font-bold rounded-lg 
+                             transform transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/25
+                             active:scale-95 border border-purple-400/30"
+                  >
+                    <SkipForward className="w-5 h-5 group-hover:animate-pulse" />
+                    SKIP
+                  </button>
+                )}
+              </div>
+            </div>
             <div className="flex items-center justify-center gap-3 mb-4">
               <Target className="w-6 h-6 text-slate-400" />
               <span className="text-xl text-slate-300">{currentMission.name}</span>
@@ -140,15 +161,15 @@ export function MissionResult({ players, selectedTeam, currentMission, onContinu
 
                         <div className="mt-4 p-3 bg-slate-900/50 rounded-lg border border-slate-700">
                           <div className="text-slate-400 text-sm text-center">
-                            {failVotes >= currentMission.failsNeeded ? (
+                            {successVotes > failVotes ? (
                               <>
-                                <AlertCircle className="w-4 h-4 inline mr-1 text-red-400" />
-                                Mission failed due to sabotage ({failVotes}/{currentMission.failsNeeded} sabotage cards)
+                                <CheckCircle className="w-4 h-4 inline mr-1 text-green-400" />
+                                Mission succeeded with majority cooperation ({successVotes} success vs {failVotes} sabotage)
                               </>
                             ) : (
                               <>
-                                <CheckCircle className="w-4 h-4 inline mr-1 text-green-400" />
-                                Mission succeeded with sufficient cooperation
+                                <AlertCircle className="w-4 h-4 inline mr-1 text-red-400" />
+                                Mission failed due to majority sabotage ({failVotes} sabotage vs {successVotes} success)
                               </>
                             )}
                           </div>
@@ -175,15 +196,6 @@ export function MissionResult({ players, selectedTeam, currentMission, onContinu
                           {player.isHuman ? 'Human Player' : 'AI Agent'}
                         </div>
                       </div>
-                      {revealed && cardIndex >= votes.length && (
-                        <div className={`px-2 py-1 rounded text-xs font-bold ${
-                          votes[index]?.vote === 'success'
-                            ? 'bg-green-600 text-white'
-                            : 'bg-red-600 text-white'
-                        }`}>
-                          {votes[index]?.vote === 'success' ? 'SUCCESS' : 'SABOTAGE'}
-                        </div>
-                      )}
                     </div>
                   ))}
                 </div>

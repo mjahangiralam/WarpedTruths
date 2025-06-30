@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Clock, MapPin, Users, ChevronRight, Star, Crown } from 'lucide-react';
+import { Clock, MapPin, Users, ChevronRight, Star, Crown, SkipForward } from 'lucide-react';
 import { Player, Mission } from '../types/game';
 
 interface MissionSelectProps {
@@ -18,16 +18,17 @@ export function MissionSelect({
   onSelectTeam 
 }: MissionSelectProps) {
   const [draggedPlayer, setDraggedPlayer] = useState<string | null>(null);
+  const [localSelectedTeam, setLocalSelectedTeam] = useState<string[]>(selectedTeam);
   const leader = players[currentLeader];
   const isPlayerLeader = leader?.isHuman;
 
   const handlePlayerClick = (playerId: string) => {
     if (!isPlayerLeader) return;
 
-    if (selectedTeam.includes(playerId)) {
-      onSelectTeam(selectedTeam.filter(id => id !== playerId));
-    } else if (selectedTeam.length < currentMission.teamSize) {
-      onSelectTeam([...selectedTeam, playerId]);
+    if (localSelectedTeam.includes(playerId)) {
+      setLocalSelectedTeam(localSelectedTeam.filter(id => id !== playerId));
+    } else if (localSelectedTeam.length < currentMission.teamSize) {
+      setLocalSelectedTeam([...localSelectedTeam, playerId]);
     }
   };
 
@@ -44,15 +45,15 @@ export function MissionSelect({
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
-    if (draggedPlayer && !selectedTeam.includes(draggedPlayer) && selectedTeam.length < currentMission.teamSize) {
-      onSelectTeam([...selectedTeam, draggedPlayer]);
+    if (draggedPlayer && !localSelectedTeam.includes(draggedPlayer) && localSelectedTeam.length < currentMission.teamSize) {
+      setLocalSelectedTeam([...localSelectedTeam, draggedPlayer]);
     }
     setDraggedPlayer(null);
   };
 
   const handleConfirmTeam = () => {
-    if (selectedTeam.length === currentMission.teamSize) {
-      onSelectTeam(selectedTeam);
+    if (localSelectedTeam.length === currentMission.teamSize) {
+      onSelectTeam(localSelectedTeam);
     }
   };
 
@@ -65,10 +66,31 @@ export function MissionSelect({
         const shuffled = availablePlayers.sort(() => Math.random() - 0.5);
         const aiTeam = shuffled.slice(0, currentMission.teamSize);
         onSelectTeam(aiTeam);
-      }, 2000);
+      }, 3000); // Increased delay to 3 seconds for better UX
       return () => clearTimeout(timer);
     }
   }, [isPlayerLeader, selectedTeam, players, currentMission.teamSize, onSelectTeam]);
+
+  // Update local team when selectedTeam prop changes
+  React.useEffect(() => {
+    setLocalSelectedTeam(selectedTeam);
+  }, [selectedTeam]);
+
+  const handleContinue = () => {
+    if (localSelectedTeam.length === currentMission.teamSize) {
+      onSelectTeam(localSelectedTeam);
+    }
+  };
+
+  const handleAIContinue = () => {
+    // Force AI to make selection immediately
+    if (!isPlayerLeader && selectedTeam.length === 0) {
+      const availablePlayers = players.map(p => p.id);
+      const shuffled = availablePlayers.sort(() => Math.random() - 0.5);
+      const aiTeam = shuffled.slice(0, currentMission.teamSize);
+      onSelectTeam(aiTeam);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 relative overflow-hidden">
@@ -88,6 +110,23 @@ export function MissionSelect({
             <p className="text-slate-300 text-lg">
               {isPlayerLeader ? 'Select your team for the mission' : `${leader?.name} is selecting the team...`}
             </p>
+            {!isPlayerLeader && selectedTeam.length === 0 && (
+              <div className="mt-4 p-3 bg-yellow-900/20 rounded-lg border border-yellow-500/30">
+                <div className="flex items-center justify-center gap-2 text-yellow-400">
+                  <Clock className="w-5 h-5 animate-spin" />
+                  <span className="font-semibold">AI is choosing team members...</span>
+                </div>
+                <button
+                  onClick={handleAIContinue}
+                  className="mt-2 group flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-yellow-500 to-orange-600 text-white font-bold rounded-lg 
+                           transform transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-yellow-500/25
+                           active:scale-95 border border-yellow-400/30"
+                >
+                  <SkipForward className="w-5 h-5 group-hover:animate-pulse" />
+                  SKIP AI SELECTION
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -159,11 +198,11 @@ export function MissionSelect({
                     {players.map(player => (
                       <div
                         key={player.id}
-                        draggable={isPlayerLeader && !selectedTeam.includes(player.id)}
+                        draggable={isPlayerLeader && !localSelectedTeam.includes(player.id)}
                         onDragStart={(e) => handleDragStart(e, player.id)}
                         onClick={() => handlePlayerClick(player.id)}
                         className={`p-4 rounded-lg border transition-all duration-200 cursor-pointer
-                          ${selectedTeam.includes(player.id)
+                          ${localSelectedTeam.includes(player.id)
                             ? 'bg-slate-600/50 border-slate-500 opacity-50'
                             : isPlayerLeader
                               ? 'bg-slate-800/50 border-slate-700 hover:border-cyan-500 hover:bg-slate-700/50'
@@ -193,19 +232,19 @@ export function MissionSelect({
                 <div>
                   <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
                     <Star className="w-5 h-5 text-green-400" />
-                    Mission Team ({selectedTeam.length}/{currentMission.teamSize})
+                    Mission Team ({localSelectedTeam.length}/{currentMission.teamSize})
                   </h3>
                   <div
                     onDragOver={handleDragOver}
                     onDrop={handleDrop}
                     className={`min-h-[300px] p-4 rounded-lg border-2 border-dashed transition-all duration-200
-                      ${selectedTeam.length > 0 
+                      ${localSelectedTeam.length > 0 
                         ? 'border-green-500 bg-green-500/10' 
                         : 'border-slate-600 bg-slate-800/30'
                       }
                     `}
                   >
-                    {selectedTeam.length === 0 ? (
+                    {localSelectedTeam.length === 0 ? (
                       <div className="text-center text-slate-400 mt-12">
                         {isPlayerLeader ? (
                           <>
@@ -222,7 +261,7 @@ export function MissionSelect({
                       </div>
                     ) : (
                       <div className="space-y-3">
-                        {selectedTeam.map((playerId, index) => {
+                        {localSelectedTeam.map((playerId, index) => {
                           const player = players.find(p => p.id === playerId);
                           if (!player) return null;
                           
@@ -242,15 +281,30 @@ export function MissionSelect({
                   </div>
 
                   {/* Confirm Button */}
-                  {isPlayerLeader && selectedTeam.length === currentMission.teamSize && (
+                  {isPlayerLeader && localSelectedTeam.length === currentMission.teamSize && (
                     <button
-                      onClick={handleConfirmTeam}
+                      onClick={handleContinue}
                       className="w-full mt-4 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold rounded-lg 
                                transform transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-green-500/25
                                active:scale-95 border border-green-400/30"
                     >
                       <div className="flex items-center justify-center gap-2">
                         DEPLOY TEAM
+                        <ChevronRight className="w-5 h-5" />
+                      </div>
+                    </button>
+                  )}
+
+                  {/* Continue Button for AI Selection */}
+                  {!isPlayerLeader && selectedTeam.length === currentMission.teamSize && (
+                    <button
+                      onClick={handleContinue}
+                      className="w-full mt-4 px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-600 text-white font-bold rounded-lg 
+                               transform transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-blue-500/25
+                               active:scale-95 border border-blue-400/30"
+                    >
+                      <div className="flex items-center justify-center gap-2">
+                        CONTINUE TO VOTE
                         <ChevronRight className="w-5 h-5" />
                       </div>
                     </button>

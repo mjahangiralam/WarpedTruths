@@ -4,9 +4,10 @@ import { Rocket, Users, Clock, Settings, BookOpen } from 'lucide-react';
 interface GameStartProps {
   onStartGame: () => void;
   onShowSettings: () => void;
+  onShowHowToPlay: () => void;
 }
 
-export function GameStart({ onStartGame, onShowSettings }: GameStartProps) {
+export function GameStart({ onStartGame, onShowSettings, onShowHowToPlay }: GameStartProps) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 relative overflow-hidden">
       {/* Animated Background */}
@@ -86,6 +87,7 @@ export function GameStart({ onStartGame, onShowSettings }: GameStartProps) {
           </button>
           
           <button
+            onClick={onShowHowToPlay}
             className="group px-8 py-4 bg-slate-800/80 backdrop-blur-sm text-slate-200 font-bold text-lg rounded-lg 
                      border border-slate-600 transition-all duration-300 hover:bg-slate-700/80 hover:border-slate-500
                      hover:shadow-lg active:scale-95"

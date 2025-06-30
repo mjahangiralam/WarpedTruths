@@ -19,7 +19,7 @@ const initialMissions: Mission[] = [
     location: "Camelot",
     era: "537 CE",
     description: "Secure the Chronos Blade from King Arthur's armory",
-    teamSize: 4,
+    teamSize: 3,
     failsNeeded: 1,
     status: 'pending'
   },
@@ -29,7 +29,7 @@ const initialMissions: Mission[] = [
     location: "Neo Tokyo",
     era: "2847 CE",
     description: "Extract the quantum core from the cybernetic archives",
-    teamSize: 4,
+    teamSize: 3,
     failsNeeded: 1,
     status: 'pending'
   }
@@ -163,16 +163,23 @@ export function useGameState() {
         .filter(p => !p.isHuman && teamMembers.includes(p.id))
         .map(player => ({
           playerId: player.id,
-          vote: player.role === 'saboteur' && Math.random() < 0.8 ? 'fail' : 'success'
+          vote: (player.role === 'saboteur' && Math.random() < 0.8 ? 'fail' : 'success') as 'success' | 'fail'
         }));
 
       const allVotes = [{ playerId: 'human', vote }, ...aiVotes];
       const failVotes = allVotes.filter(v => v.vote === 'fail').length;
-      const missionSuccess = failVotes < mission.failsNeeded;
+      const successVotes = allVotes.filter(v => v.vote === 'success').length;
+      
+      // Mission succeeds if more success votes than fail votes
+      const missionSuccess = successVotes > failVotes;
 
       const updatedMissions = prev.missions.map((m, index) => 
         index === prev.currentMission 
-          ? { ...m, status: missionSuccess ? 'success' : 'failed', votes: allVotes }
+          ? { 
+              ...m, 
+              status: missionSuccess ? ('success' as const) : ('failed' as const), 
+              votes: allVotes 
+            }
           : m
       );
 
@@ -240,13 +247,28 @@ export function useGameState() {
         case 'missionResult':
           const nextMission = prev.currentMission + 1;
           const nextLeader = (prev.currentLeader + 1) % prev.players.length;
-          return { 
-            ...prev, 
-            phase: nextMission < 3 ? 'missionSelect' : 'gameEnd',
-            currentMission: nextMission,
-            currentLeader: nextLeader,
-            selectedTeam: []
-          };
+          
+          // Check if we should end the game (2 out of 3 missions wins)
+          const successCount = prev.missions.filter(m => m.status === 'success').length;
+          const failCount = prev.missions.filter(m => m.status === 'failed').length;
+          
+          if (successCount >= 2 || failCount >= 2) {
+            return { ...prev, phase: 'gameEnd' };
+          }
+          
+          // Continue to next mission if available
+          if (nextMission < 3) {
+            return { 
+              ...prev, 
+              phase: 'missionSelect',
+              currentMission: nextMission,
+              currentLeader: nextLeader,
+              selectedTeam: [],
+              chat: [] // Clear chat for new mission
+            };
+          } else {
+            return { ...prev, phase: 'gameEnd' };
+          }
         default:
           return prev;
       }

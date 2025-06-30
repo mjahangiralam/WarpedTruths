@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, MessageCircle, Clock, Users } from 'lucide-react';
+import { Send, MessageCircle, Clock, Users, SkipForward } from 'lucide-react';
 import { Player, ChatMessage } from '../types/game';
 
 interface DiscussionProps {
@@ -85,6 +85,16 @@ export function Discussion({
               <Clock className={`w-5 h-5 ${timer <= 30 ? 'animate-pulse' : ''}`} />
               <span className="font-mono text-lg font-bold">{formatTime(timer)}</span>
             </div>
+            
+            <button
+              onClick={onTimerEnd}
+              className="group flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-600 text-white font-bold rounded-lg 
+                       transform transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/25
+                       active:scale-95 border border-purple-400/30"
+            >
+              <SkipForward className="w-5 h-5 group-hover:animate-pulse" />
+              SKIP
+            </button>
           </div>
         </div>
 

@@ -54,7 +54,7 @@ export interface ChatMessage {
 }
 
 export interface GameState {
-  phase: 'start' | 'lobby' | 'roleReveal' | 'missionSelect' | 'teamVote' | 'discussion' | 'missionVote' | 'missionResult' | 'gameEnd';
+  phase: 'start' | 'lobby' | 'roleReveal' | 'missionSelect' | 'teamVote' | 'discussion' | 'missionVote' | 'missionResult' | 'gameEnd' | 'howToPlay';
   players: Player[];
   missions: Mission[];
   currentMission: number;

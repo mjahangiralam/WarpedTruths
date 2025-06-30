@@ -9,6 +9,7 @@ import { Discussion } from './components/Discussion';
 import { MissionVoting } from './components/MissionVoting';
 import { MissionResult } from './components/MissionResult';
 import { GameEnd } from './components/GameEnd';
+import { HowToPlay } from './components/HowToPlay';
 
 function App() {
   const { gameState, startGame, selectTeam, submitTeamVote, submitMissionVote, addChatMessage, nextPhase, setGameState } = useGameState();
@@ -19,6 +20,10 @@ function App() {
 
   const handleBackToStart = () => {
     setGameState(prev => ({ ...prev, phase: 'start' }));
+  };
+
+  const handleShowHowToPlay = () => {
+    setGameState(prev => ({ ...prev, phase: 'howToPlay' }));
   };
 
   const handleSendMessage = (message: string) => {
@@ -64,7 +69,10 @@ function App() {
 
   switch (gameState.phase) {
     case 'start':
-      return <GameStart onStartGame={handleStartClick} onShowSettings={handleStartClick} />;
+      return <GameStart onStartGame={handleStartClick} onShowSettings={handleStartClick} onShowHowToPlay={handleShowHowToPlay} />;
+    
+    case 'howToPlay':
+      return <HowToPlay onBack={handleBackToStart} />;
     
     case 'lobby':
       return <GameLobby onStartGame={startGame} onBack={handleBackToStart} />;
@@ -138,7 +146,7 @@ function App() {
       );
     
     default:
-      return <GameStart onStartGame={handleStartClick} onShowSettings={handleStartClick} />;
+      return <GameStart onStartGame={handleStartClick} onShowSettings={handleStartClick} onShowHowToPlay={handleShowHowToPlay} />;
   }
 }
 
